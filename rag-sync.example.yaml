@@ -1,0 +1,40 @@
+# rag-sync config. Copy to rag-sync.yaml (gitignored) and write your own queries.
+#
+# Each source is one SQL query. It must return:
+#   id        stable id of the document (any type, stored as text)
+#   title     short name, also prefixed to every chunk before embedding
+#   content   the text to index
+# and may return:
+#   owner_id    who may see it (null = everyone). Used by sql/supabase.sql
+#   updated_at  informative only
+#   metadata    a JSON object stored next to the document
+#
+# A row that disappears from the query is deleted from the index, so filter
+# out what shouldn't be searchable (drafts, disabled rows...) right here.
+
+sources:
+  docs: |
+    select d.id,
+           d.title,
+           d.body                                     as content,
+           d.user_id                                  as owner_id,
+           d.updated_at,
+           jsonb_build_object('folder', d.folder)     as metadata
+    from public.documents d
+    where d.status = 'published'
+
+  tools: |
+    select t.name                                     as id,
+           t.name                                     as title,
+           t.description                              as content
+    from public.tools t
+    where t.enabled
+
+# Optional (defaults shown)
+# model: openai/text-embedding-3-small
+# embeddings_url: https://ai-gateway.vercel.sh/v1/embeddings   # any OpenAI-compatible endpoint
+# api_key_env: AI_GATEWAY_API_KEY
+# price_per_million: 0.02     # USD, only used when the API doesn't report the cost
+# chunk_chars: 1500
+# batch_size: 64              # chunks per embeddings request
+# max_delete_ratio: 0.5       # refuse a sync that deletes more than half of a source (override with --force)

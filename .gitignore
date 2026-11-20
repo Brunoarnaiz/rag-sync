@@ -1,0 +1,16 @@
+# Secrets: database URL and API keys never go in the repo
+.env
+.env.*
+!.env.example
+
+# Your own config (it holds your SQL queries); commit rag-sync.example.yaml instead
+rag-sync.yaml
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
