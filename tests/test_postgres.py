@@ -91,7 +91,8 @@ def test_sync_search_and_resync(store):
     target = vector("Integrals\n\nHow to integrate by parts. Now with examples.", 1536)
     hits = store.search(target, "notes", None, 3)
     assert hits[0].doc_id == "1" and hits[0].similarity == pytest.approx(1.0)
-    seen_by_u2 = {h.doc_id for h in store.search(target, None, "u2", 20)}
-    assert seen_by_u2 == {"2"}
+    # One hit per document: "Webhooks" has 5 chunks but appears once, with its best chunk.
+    u2_hits = store.search(target, None, "u2", 20)
+    assert [h.doc_id for h in u2_hits] == ["2"]
     seen_by_u1 = {h.doc_id for h in store.search(target, None, "u1", 20)}
     assert seen_by_u1 == {"1", "2", "4"}

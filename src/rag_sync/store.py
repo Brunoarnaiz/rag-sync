@@ -159,16 +159,24 @@ class PostgresStore:
     # -- reading -------------------------------------------------------------
 
     def search(self, embedding: list[float], source: str | None, owner_id: str | None, k: int) -> list[Hit]:
-        """Nearest chunks. With ``owner_id``, only that owner's chunks plus shared ones (owner_id is null)."""
+        """The ``k`` nearest documents, each with its best chunk.
+
+        With ``owner_id``, only that owner's documents plus shared ones (owner_id is null).
+        """
         vec = _vector(embedding)
         rows = self.conn.execute(
             """
-            select c.source, c.doc_id, d.title, c.content, 1 - (c.embedding <=> %(vec)s::vector) as similarity
-            from rag_sync.chunks c
-            join rag_sync.documents d using (source, doc_id)
-            where (%(source)s::text is null or c.source = %(source)s)
-              and (%(owner)s::text is null or c.owner_id is null or c.owner_id = %(owner)s)
-            order by c.embedding <=> %(vec)s::vector
+            select source, doc_id, title, content, similarity from (
+                select distinct on (c.source, c.doc_id)
+                       c.source, c.doc_id, d.title, c.content,
+                       1 - (c.embedding <=> %(vec)s::vector) as similarity
+                from rag_sync.chunks c
+                join rag_sync.documents d using (source, doc_id)
+                where (%(source)s::text is null or c.source = %(source)s)
+                  and (%(owner)s::text is null or c.owner_id is null or c.owner_id = %(owner)s)
+                order by c.source, c.doc_id, c.embedding <=> %(vec)s::vector
+            ) best
+            order by similarity desc
             limit %(k)s
             """,
             {"vec": vec, "source": source, "owner": owner_id, "k": k},
