@@ -1,16 +1,25 @@
-# Secrets: database URL and API keys never go in the repo
+# Only rag-sync itself is tracked. Everything else in this folder (your own
+# rag-sync.yaml, .env with secrets, logs, experiments, the virtualenv) stays
+# local: ignore everything at the top level, then allow the project files.
+/*
+!/.gitignore
+!/.github/
+!/.env.example
+!/LICENSE
+!/README.md
+!/pyproject.toml
+!/rag-sync.example.yaml
+!/sql/
+!/src/
+!/tests/
+
+# Never commit secrets, wherever they end up
 .env
 .env.*
-!.env.example
+!/.env.example
 
-# Your own config (it holds your SQL queries); commit rag-sync.example.yaml instead
-rag-sync.yaml
-
-# Python
+# Python leftovers inside the tracked folders
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
-dist/
-build/
 .pytest_cache/
